@@ -1,10 +1,13 @@
 {
-  "name": "permission-bot",
+  "name": "permissions.app",
   "version": "1.0.0",
   "private": true,
   "description": "An app that automatically grant teams the right permission when a repository is created within a GitHub organization",
   "author": "Alain Hélaïli <helaili@github.com>",
   "license": "ISC",
+  "repository": "https://github.com/helaili/permission-bot",
+  "homepage": "https://github.com/helaili/permission-bot",
+  "bugs": "https://github.com/helaili/permission-bot/issues",
   "keywords": [
     "probot",
     "github",
@@ -12,9 +15,11 @@
   ],
   "scripts": {
     "start": "probot run ./index.js",
-    "test": "jest"
+    "test": "jest",
+    "send.repository.created": "node_modules/.bin/probot receive -e repository -p test/fixtures/repo.created.json ./index.js" 
   },
   "dependencies": {
+    "js-yaml": "^4.0.0",
     "probot": "^11.0.1"
   },
   "devDependencies": {

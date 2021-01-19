@@ -1,6 +1,26 @@
-# permission-bot
+# permissions.app
 
-> A GitHub App built with [Probot](https://github.com/probot/probot) that An app that automatically grant teams the right permission when a repository is created within a GitHub organization
+An app that automatically grants teams the right permission when a repository is created within a GitHub organization
+
+## Usage
+
+Create a `permissions.app.yml` at the root of a `.github-private` repository within your organization, with an entry for each permission pointing to an array of teams. These teams will receive the above permission on each newly created repository. 
+Exemple: 
+
+```yaml
+admin: 
+  - team3
+pull: 
+  - team1
+  - team2
+```
+
+Permissions values are: 
+- `pull` - team members can pull, but not push to or administer this repository.
+- `push` - team members can pull and push, but not administer this repository.
+- `admin` - team members can pull, push and administer this repository.
+- `maintain` - team members can manage the repository without access to sensitive or destructive actions. Recommended for project managers. Only applies to repositories owned by organizations.
+- `triage` - team members can proactively manage issues and pull requests without write access. Recommended for contributors who triage a repository. Only applies to repositories owned by organizations.
 
 ## Setup
 
