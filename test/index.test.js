@@ -3,8 +3,7 @@ const nock = require("nock");
 const myProbotApp = require("..");
 const { Probot, ProbotOctokit } = require("probot");
 // Requiring our fixtures
-const payload = require("./fixtures/issues.opened");
-const issueCreatedBody = { body: "Thanks for opening this issue!" };
+const payload = require("./fixtures/repo.created");
 const fs = require("fs");
 const path = require("path");
 
@@ -31,28 +30,8 @@ describe("My Probot app", () => {
     probot.load(myProbotApp);
   });
 
-  test("creates a comment when an issue is opened", async () => {
-    const mock = nock("https://api.github.com")
-      // Test that we correctly return a test token
-      .post("/app/installations/2/access_tokens")
-      .reply(200, {
-        token: "test",
-        permissions: {
-          issues: "write",
-        },
-      })
-
-      // Test that a comment is posted
-      .post("/repos/hiimbex/testing-things/issues/1/comments", (body) => {
-        expect(body).toMatchObject(issueCreatedBody);
-        return true;
-      })
-      .reply(200);
-
-    // Receive a webhook event
-    await probot.receive({ name: "issues", payload });
-
-    expect(mock.pendingMocks()).toStrictEqual([]);
+  test("set permissions when a repo is created", async () => {
+    
   });
 
   afterEach(() => {
