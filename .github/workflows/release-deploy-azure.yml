@@ -1,0 +1,115 @@
+# secrets.AZURE_CREDENTIALS was generated with the following command: 
+# az ad sp create-for-rbac --name "permissions.app" --sdk-auth --role contributor --scopes /subscriptions/xxxxx/resourceGroups/permissions.app
+
+name: Deploy to Azure
+
+on:
+  release:
+    types: [created]
+  workflow_dispatch:
+
+env:
+  NODE_VERSION: '12.x' 
+  RESOURCE_GROUP: 'permissions.app'
+  CONTAINER_NAME: permissions-app
+  DOCKER_REGISTRY_URL: docker.pkg.github.com
+  DOCKER_USERNAME: <token>
+  DOCKER_TOKEN: ${{secrets.DOCKER_TOKEN}}
+
+jobs:
+  build-and-test:
+    name: Build and Test
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v2
+    - name: Use Node.js ${{ env.NODE_VERSION }}
+      uses: actions/setup-node@v1
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+    - name: Cache Node.js modules
+      uses: actions/cache@v2
+      with:
+        path: ~/.npm
+        key: ${{ runner.OS }}-node-${{ hashFiles('**/package-lock.json') }}
+        restore-keys: |
+          ${{ runner.OS }}-node-
+          ${{ runner.OS }}-
+    - name: npm install, build, and test
+      run: |
+        # Build and test the project, then
+        # deploy to Azure Web App.
+        npm install
+        npm run build --if-present
+        npm run test --if-present
+    - name: Build the Docker image
+      run: docker build . --file Dockerfile --tag $DOCKER_REGISTRY_URL/$GITHUB_REPOSITORY/$CONTAINER_NAME:$GITHUB_SHA
+    - name: GHPR Docker Login
+      uses: docker/login-action@v1
+      with:
+        registry: ${{ env.DOCKER_REGISTRY_URL }}
+        username: ${{ env.DOCKER_USERNAME }}
+        password: ${{ env.DOCKER_TOKEN }}
+    - name: Publish Docker image
+      id: container_publish
+      run: |
+        docker push $DOCKER_REGISTRY_URL/$GITHUB_REPOSITORY/$CONTAINER_NAME:$GITHUB_SHA
+
+  deploy:
+    name: Deploy
+    runs-on: ubuntu-latest
+    needs: build-and-test
+
+    strategy:
+      fail-fast: true
+      matrix: 
+        env: [
+          {name: 'qa', webapp: 'permissions-app-qa'},
+          {name: 'production', webapp: 'permissions-app'}
+        ]
+
+    environment: 
+      name: ${{ matrix.env.name }}
+      url:  'https://${{ matrix.env.webapp }}.azurewebsites.net'
+
+    steps:
+    - name: Login to Azure
+      uses: azure/login@v1
+      with:
+        creds: ${{ secrets.AZURE_CREDENTIALS }}
+    - name: Create the Azure Web App
+      run: az webapp create --resource-group $RESOURCE_GROUP --plan ${{ secrets.APP_SERVICE_PLAN }} --name ${{ matrix.env.webapp }} --deployment-container-image-name $DOCKER_REGISTRY_URL/$GITHUB_REPOSITORY/$CONTAINER_NAME:$GITHUB_SHA
+    - name: Set the Azure Web App Docker registry paramas
+      uses: Azure/appservice-settings@v1
+      with:
+        app-name: ${{ matrix.env.webapp }}
+        app-settings-json: |
+          [
+            {
+              "name": "DOCKER_REGISTRY_SERVER_URL",
+              "value": "${{ env.DOCKER_REGISTRY_URL }}",
+              "slotSetting": false
+            },
+            {
+              "name": "DOCKER_REGISTRY_SERVER_USERNAME",
+              "value": "${{ env.DOCKER_USERNAME  }}",
+              "slotSetting": false
+            },
+            {
+              "name": "DOCKER_REGISTRY_SERVER_PASSWORD",
+              "value": "${{ env.DOCKER_TOKEN }}",
+              "slotSetting": false
+            }
+          ]
+    - name: Set the environment variables
+      run: |
+        az webapp config appsettings set -g $RESOURCE_GROUP -n ${{ matrix.env.webapp }} --settings APP_ID=${{ secrets.APP_ID }} PRIVATE_KEY=${{ secrets.PRIVATE_KEY }} WEBHOOK_SECRET=${{ secrets.WEBHOOK_SECRET }} NODE_ENV=${{ matrix.env.name }} PORT=8080
+    - name: Set Sentry
+      if: ${{ matrix.env.name == 'production' }}
+      run: |
+        az webapp config appsettings set -g $RESOURCE_GROUP -n ${{ matrix.env.webapp }} --settings SENTRY_DSN=${{ secrets.SENTRY_DSN }}
+    - name: Load Web App
+      timeout-minutes: 5
+      continue-on-error: true
+      run: curl https://${{ matrix.env.webapp }}.azurewebsites.net
+
