@@ -16,9 +16,10 @@
   "scripts": {
     "start": "probot run ./index.js",
     "test": "jest",
-    "send.repository.created": "node_modules/.bin/probot receive -e repository -p test/fixtures/repo.created.json ./index.js" 
+    "send.repository.created": "node_modules/.bin/probot receive -e repository -p test/fixtures/repo.created.json ./index.js"
   },
   "dependencies": {
+    "@probot/serverless-lambda": "^1.0.2",
     "js-yaml": "^4.0.0",
     "probot": "^11.0.1"
   },

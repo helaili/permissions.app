@@ -22,6 +22,8 @@ Permissions values are:
 - `maintain` - team members can manage the repository without access to sensitive or destructive actions. Recommended for project managers. Only applies to repositories owned by organizations.
 - `triage` - team members can proactively manage issues and pull requests without write access. Recommended for contributors who triage a repository. Only applies to repositories owned by organizations.
 
+Visit [this page](https://github.com/apps/permissions-app) to install the app on your organizations, selecting "All repositories".
+
 ## Setup
 
 ```sh
