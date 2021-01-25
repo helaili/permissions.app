@@ -1,0 +1,56 @@
+name: Deploy Lambda
+
+on:
+  push:
+    branches:
+      - main
+      - serverless-pipeline
+  workflow_dispatch:
+
+env:
+  NODE_VERSION: '12.x'
+
+jobs:
+  build-and-test:
+    name: Build, Test and Deploy
+    runs-on: ubuntu-latest
+
+    environment: 
+      name: lambda-prod
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: Use Node.js ${{ env.NODE_VERSION }}
+      uses: actions/setup-node@v1
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+    - name: Cache Node.js modules
+      uses: actions/cache@v2
+      with:
+        path: ~/.npm
+        key: ${{ runner.OS }}-node-${{ hashFiles('**/package-lock.json') }}
+        restore-keys: |
+          ${{ runner.OS }}-node-
+    - name: Cache Serverless files
+      uses: actions/cache@v2
+      with:
+        path: .serverless
+        key: ${{ runner.OS }}-serverless-${{ hashFiles('serverless.yml') }}
+        restore-keys: |
+          ${{ runner.OS }}-serverless-
+    - name: npm install, build, and test
+      run: |
+        npm install
+        npm run build --if-present
+        npm run test --if-present
+    - name: serverless deploy
+      uses: serverless/github-action@master
+      with:
+        args: deploy --stage prod
+      env:
+        AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        APP_ID: ${{ secrets.APP_ID }}
+        PRIVATE_KEY: ${{ secrets.PRIVATE_KEY }}
+        WEBHOOK_SECRET: ${{ secrets.WEBHOOK_SECRET }}
+        GHE_HOST: ${{ secrets.GHE_HOST }}
