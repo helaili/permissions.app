@@ -5,6 +5,7 @@ on:
     branches:
       - main
       - serverless-pipeline
+  workflow_dispatch:
 
 env:
   NODE_VERSION: '12.x'
