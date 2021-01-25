@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+      - serverless-pipeline
 
 env:
   NODE_VERSION: '12.x'
