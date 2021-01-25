@@ -1,0 +1,25 @@
+service: permissions-app
+
+useDotenv: true
+
+provider:
+  name: aws
+  runtime: nodejs12.x
+  region: eu-west-1
+  stage: ${opt:stage, 'dev'}
+  environment:
+    APP_ID: ${env:APP_ID}
+    PRIVATE_KEY: ${env:PRIVATE_KEY}
+    WEBHOOK_SECRET: ${env:WEBHOOK_SECRET}
+    GHE_HOST: ${env:GHE_HOST}
+
+functions:
+  router:
+    handler: handler.probot
+
+    events:
+      - http:
+          path: /probot
+          method: post
+      
+

@@ -3,9 +3,7 @@ npm-debug.log
 *.pem
 !mock-cert.pem
 .env
-.env.prod
-.env.qa
+.env.*
 coverage
 lib
-serverless.yml
 .serverless
