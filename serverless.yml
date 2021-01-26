@@ -15,7 +15,7 @@ provider:
 
 functions:
   router:
-    handler: handler.probot
+    handler: handler.webhooks
 
     events:
       - http:
